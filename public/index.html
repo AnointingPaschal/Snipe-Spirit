@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snipe Spirit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        :root { 
+            --bg: #000000;
+            --panel: #050a05;
+            --border: #004411;
+            --green: #00ff41;
+            --yellow: #ffea00;
+            --red: #ff2a2a;
+            --blue: #00aaff;
+            --text-main: #b3ffc2;
+            --text-muted: #4d9961;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+        
+        body { 
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: var(--font-mono); 
+            padding: 15px; 
+            display: flex; flex-direction: column; gap: 15px; 
+            min-height: 100vh;
+            overflow-y: auto; 
+            overflow-x: hidden;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        #matrix-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.15; pointer-events: none; }
+        
+        .header-container { display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .brand-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        
+        .brand-area { display: flex; align-items: center; gap: 15px; }
+        .brand { font-size: 20px; font-weight: bold; color: var(--green); letter-spacing: 1px;}
+        .network-select { background: #000; border: 1px solid var(--green); color: var(--yellow); padding: 4px 10px; font-family: inherit; font-size: 14px; outline: none; font-weight: bold; cursor: pointer;}
+        
+        .tab-nav { display: flex; gap: 8px; flex-wrap: wrap;}
+        .tab-btn { background: #000; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 12px; transition: 0.2s;}
+        .tab-btn:hover { background: var(--border); color: var(--text-main); }
+        .tab-btn.active { background: var(--border); color: var(--yellow); border-color: var(--yellow); font-weight: bold; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        
+        .balances { display: flex; gap: 20px; font-size: 14px; background: var(--panel); padding: 8px 15px; border: 1px solid var(--border); align-items: center;}
+        .bal-val { color: var(--green); font-weight: bold; }
+        .bal-usd { color: var(--text-muted); font-size: 11px; margin-left: 5px; }
+
+        .controls { display: flex; gap: 8px; flex-wrap: wrap;}
+        .btn { background: #000; border: 1px solid var(--border); color: var(--text-main); padding: 8px 15px; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: bold; transition: 0.1s;}
+        .btn:hover { background: var(--border); color: var(--green); }
+        .btn-green { border-color: var(--green); color: var(--green); } .btn-green:hover { background: var(--green); color: #000; }
+        .btn-yellow { border-color: var(--yellow); color: var(--yellow); } .btn-yellow:hover { background: var(--yellow); color: #000; }
+        .btn-red { border-color: var(--red); color: var(--red); } .btn-red:hover { background: var(--red); color: #000; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-box { background: var(--panel); border: 1px solid var(--border); padding: 10px 15px; display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;}
+        .stat-val { font-size: 22px; font-weight: bold; color: var(--yellow); transition: color 0.3s;}
+        
+        .screen-view { display: none; flex-direction: column; gap: 15px; }
+        .screen-view.active { display: flex; }
+        
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        
+        .panel { background: var(--panel); border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; background: #0a140a; padding: 8px 15px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: bold; color: var(--green);}
+        .panel-content { display: flex; flex-direction: column; padding: 15px; gap: 15px;}
+        
+        .manual-snipe-box { display: flex; gap: 10px; }
+        .manual-input { flex: 1; background: #000; border: 1px solid var(--border); color: var(--green); padding: 8px 12px; font-family: inherit; font-size: 12px; outline: none;}
+        .manual-input:focus { border-color: var(--yellow); }
+        
+        #target-navigator { display: none; justify-content: space-between; align-items: center; background: #000; border: 1px dashed var(--border); padding: 6px 12px; }
+        #target-counter { font-size: 12px; font-weight: bold; color: var(--yellow); }
+
+        #scan-card { display: none; background: #000; border: 1px solid var(--border); flex-direction: column; }
+        .ds-header-img { width: 100%; height: 120px; object-fit: cover; border-bottom: 1px solid var(--border); display: none; }
+        .ds-socials { display: flex; justify-content: center; background: #111; padding: 6px; border-bottom: 1px solid var(--border); gap: 15px; }
+        .ds-socials a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: 0.2s;}
+        .ds-socials a:hover { color: var(--green); }
+        .ds-inner-pad { padding: 15px; display: flex; flex-direction: column; gap: 15px;}
+        .scan-title { font-size: 16px; font-weight: bold; color: var(--yellow); display: flex; justify-content: space-between; align-items: center; }
+        
+        .scan-data-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        @media (max-width: 600px) { .scan-data-grid { grid-template-columns: repeat(2, 1fr); } }
+        .sd-box { background: #050a05; border: 1px solid var(--border); padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .sd-label { font-size: 10px; color: var(--text-muted); }
+        .sd-val { font-size: 14px; font-weight: bold; color: var(--green); }
+        .pos { color: var(--green) !important; } .neg { color: var(--red) !important; }
+        
+        .ds-split { display: grid; grid-template-columns: 1fr 1.5fr; gap: 15px; background: #050a05; border: 1px solid var(--border); padding: 10px; }
+        .ds-bar-wrap { width: 100%; height: 6px; background: var(--red); display: flex; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+        .ds-bar-green { height: 100%; background: var(--green); transition: 0.5s; }
+        .ds-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-bottom: 2px;}
+
+        .time-ribbon { display: flex; justify-content: space-between; background: #050a05; border: 1px solid var(--border); padding: 8px 12px; font-size: 11px; margin-top: -7px;}
+        .time-ribbon span { color: var(--text-muted); }
+
+        #ai-insight-box { background: #000; border: 1px dashed var(--border); padding: 12px; }
+        
+        #view-terminal .panel { height: 400px; flex: none; }
+        .session-log { font-size: 12px; line-height: 1.5; padding: 15px; background: #000; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
+        .log-entry { word-wrap: break-word; padding-left: 8px; border-left: 2px solid transparent;} 
+        .log-buy { color: var(--green); border-color: var(--green); } 
+        .log-sell { color: var(--yellow); border-color: var(--yellow); } 
+        .log-alert { color: var(--red); border-color: var(--red);}
+        .log-info { color: var(--text-main); }
+        .log-blue { color: var(--blue); border-color: var(--blue); }
+
+        .positions-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 1200px) { .positions-container { grid-template-columns: 1fr 1fr; } }
+        
+        .position-card { background: #000; border: 1px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; transition: 0.2s;}
+        .position-card:hover { border-color: var(--green); box-shadow: 0 0 10px rgba(0,255,65,0.1); }
+        .position-card.closed { opacity: 0.5; border-style: dashed; }
+        .clickable-area { cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+        .pos-header { display: flex; justify-content: space-between; align-items: flex-start;}
+        .pos-title { font-size: 15px; font-weight: bold; color: var(--green); display: flex; align-items: center; gap: 6px; }
+        .pos-symbol { font-size: 11px; color: var(--yellow); display: block; margin-top: 2px;}
+        .multiplier-badge { background: #111; padding: 4px 8px; font-size: 13px; font-weight: bold; border: 1px solid; }
+        
+        .pos-mint { font-size: 10px; color: var(--text-muted); word-break: break-all; padding: 4px; background: #050a05; border: 1px dashed var(--border);}
+        .pos-stats { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-main); background: #000; padding: 6px; border: 1px solid var(--border);}
+        .pos-stats.live-pnl { background: rgba(0, 255, 65, 0.05); border-color: var(--green); }
+        .pos-stats.live-loss { background: rgba(255, 42, 42, 0.05); border-color: var(--red); }
+        
+        .action-row { display: flex; gap: 8px; margin-top: 5px; z-index: 10; position: relative;}
+        .action-row .btn { flex: 1; padding: 6px; font-size: 10px; }
+        
+        .delete-btn { background: #000; border: 1px solid var(--border); color: var(--red); cursor: pointer; padding: 4px 8px; font-size: 12px; font-weight: bold; transition: 0.2s; z-index: 10; position: relative;}
+        .delete-btn:hover { background: var(--red); color: #000; }
+
+        .config-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); border: 2px solid var(--green); padding: 25px; z-index: 100; width: 95%; max-width: 750px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--green); padding-bottom: 15px; margin-bottom: 20px;}
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        @media (max-width: 600px) { .grid-3 { grid-template-columns: 1fr; } }
+        .input-group { margin-bottom: 15px; } 
+        .input-group label { font-size: 11px; color: var(--green); display:block; margin-bottom:5px; }
+        .input-group input, .input-group select { width: 100%; background: #000; border: 1px solid var(--border); color: var(--yellow); padding: 10px; font-family: inherit; font-size: 12px; outline: none;}
+        .input-group input:focus, .input-group select:focus { border-color: var(--green); }
+        .section-title { font-size: 11px; color: #000; background: var(--green); padding: 5px 10px; margin-top: 20px; margin-bottom: 15px; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="header-container">
+        <div class="brand-row">
+            <div class="brand-area">
+                <div class="brand"><i class="fa-solid fa-crosshairs"></i> Snipe Spirit</div>
+                <select id="ACTIVE_NETWORK" class="network-select" onchange="switchNetwork()">
+                    <option value="SOL">◎ SOLANA (SVM)</option>
+                    <option value="BSC">⟠ BINANCE (EVM)</option>
+                    <option value="ETH">Ξ ETHEREUM (EVM)</option>
+                </select>
+            </div>
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('radar')"><i class="fa-solid fa-radar"></i> Scanner & Vault</button>
+                <button class="tab-btn" onclick="switchTab('watchlist')"><i class="fa-solid fa-list"></i> Watchlist</button>
+                <button class="tab-btn" onclick="switchTab('feed')"><i class="fa-solid fa-satellite-dish"></i> Live Signals</button>
+                <button class="tab-btn" onclick="switchTab('terminal')"><i class="fa-solid fa-terminal"></i> Activity Logs</button>
+            </div>
+        </div>
+        <div class="top-bar">
+            <div class="balances">
+                <div><i class="fa-solid fa-bolt" id="coin-icon"></i> <span id="coin-name">SOL</span>: <span class="bal-val" id="ui-sol">0.0000</span> <span class="bal-usd" id="ui-sol-usd">($0.00)</span></div>
+                <div id="wsol-box"><i class="fa-solid fa-droplet"></i> WSOL: <span class="bal-val" id="ui-wsol" style="color:var(--yellow)">0.0000</span> <span class="bal-usd" id="ui-wsol-usd">($0.00)</span></div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-green" id="botBtn" onclick="toggleBot()"><i class="fa-solid fa-play"></i> Start Scanner</button>
+                <button class="btn" onclick="toggleModal('modal-core')"><i class="fa-solid fa-gear"></i> Core Settings</button>
+                <button class="btn" onclick="toggleModal('modal-adv')"><i class="fa-solid fa-sliders"></i> Advanced Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-box"><div class="stat-label"><i class="fa-solid fa-chart-line"></i> Total Trades</div><div class="stat-val" id="ui-trades" style="color:var(--green);">0</div></div>
+        <div class="stat-box"><div class="stat-label"><i class="fa-solid fa-trophy"></i> Winning Trades</div><div class="stat-val" id="ui-wins">0</div></div>
+        <div class="stat-box"><div class="stat-label"><i class="fa-solid fa-skull-crossbones"></i> Losing Trades</div><div class="stat-val" id="ui-losses">0</div></div>
+        <div class="stat-box"><div class="stat-label" id="net-profit-label"><i class="fa-solid fa-sack-dollar"></i> Net Profit (SOL)</div><div class="stat-val" id="ui-pnl">0.0000</div></div>
+    </div>
+
+    <div id="modal-core" class="config-modal">
+        <div class="modal-header"><h3 style="margin:0; color:var(--green);"><i class="fa-solid fa-gear"></i> Core Settings</h3><button class="btn" onclick="toggleModal('modal-core')">X</button></div>
+        
+        <div class="grid-3">
+            <div class="input-group">
+                <label style="color: var(--yellow);">Scanner Source Target</label>
+                <select id="SCAN_SOURCE">
+                    <option value="dexscreener">DexScreener API</option>
+                    <option value="pumpfun">Pump.fun (SOL Only)</option>
+                    <option value="raydium">Raydium Pools (SOL Only)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label style="color: var(--yellow);">Scanner Category</label>
+                <select id="RADAR_CATEGORY">
+                    <option value="latest_profiles">Newest Profiles (< 1 Day)</option>
+                    <option value="latest_boosted">Newest Boosted (< 1 Hour)</option>
+                    <option value="top_boosted">Trending Top Boosted</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Base Currency Amount</label><input type="number" id="QUOTE_AMOUNT" value="0.0001" step="0.0001"></div>
+        </div>
+
+        <div class="section-title">◎ SOLANA (SVM) CONFIGURATION</div>
+        <div class="grid-3">
+            <div class="input-group"><label>Solana Private Key (Base58)</label><input type="password" id="PRIVATE_KEY"></div>
+            <div class="input-group"><label>RPC Endpoint HTTP</label><input type="text" id="RPC_ENDPOINT"></div>
+            <div class="input-group"><label>RPC WebSocket</label><input type="text" id="RPC_WEBSOCKET_ENDPOINT"></div>
+        </div>
+        <div class="grid-3">
+            <div class="input-group"><label>Buy Slippage (%)</label><input type="number" id="BUY_SLIPPAGE" value="20"></div>
+            <div class="input-group"><label>Compute Unit Price</label><input type="number" id="COMPUTE_UNIT_PRICE" value="421197"></div>
+            <div class="input-group"><label>Commitment Level</label><input type="text" id="COMMITMENT_LEVEL" value="confirmed"></div>
+        </div>
+
+        <div class="section-title" style="background:var(--blue); color:#fff;">⟠ EVM (BSC / ETH) CONFIGURATION</div>
+        <div class="grid-3">
+            <div class="input-group"><label style="color:var(--blue)">BSC Private Key (0x...)</label><input type="password" id="BSC_PRIVATE_KEY"></div>
+            <div class="input-group"><label style="color:var(--blue)">BSC RPC Endpoint</label><input type="text" id="BSC_RPC" value="https://bsc-dataseed.binance.org/"></div>
+            <div class="input-group"><label style="color:var(--blue)">BSC Slippage (%)</label><input type="number" id="BSC_SLIPPAGE" value="15"></div>
+        </div>
+        <div class="grid-3">
+            <div class="input-group"><label style="color:var(--blue)">ETH Private Key (0x...)</label><input type="password" id="ETH_PRIVATE_KEY"></div>
+            <div class="input-group"><label style="color:var(--blue)">ETH RPC Endpoint</label><input type="text" id="ETH_RPC" value="https://eth.llamarpc.com"></div>
+            <div class="input-group"><label style="color:var(--blue)">ETH Slippage (%)</label><input type="number" id="ETH_SLIPPAGE" value="15"></div>
+        </div>
+
+        <button class="btn btn-green" onclick="saveSettings()" style="width:100%; margin-top:10px;"><i class="fa-solid fa-floppy-disk"></i> Save Configuration</button>
+    </div>
+
+    <div id="modal-adv" class="config-modal">
+        <div class="modal-header"><h3 style="margin:0; color:var(--yellow);"><i class="fa-solid fa-sliders"></i> Advanced Settings</h3><button class="btn" onclick="toggleModal('modal-adv')">X</button></div>
+        
+        <div class="section-title"><i class="fa-solid fa-filter"></i> Scanner Target Filters</div>
+        <div class="grid-3">
+            <div class="input-group"><label>Minimum Liquidity (USD)</label><input type="number" id="MIN_LIQUIDITY" value="5000"></div>
+            <div class="input-group"><label>Minimum Market Cap (USD)</label><input type="number" id="MIN_MCAP" value="10000"></div>
+            <div class="input-group"><label>Max Scan Targets (Per Run)</label><input type="number" id="SCAN_LIMIT" value="10"></div>
+        </div>
+        <div class="grid-3" style="margin-top:-15px;">
+            <div class="input-group"><label>Minimum Pair Age (Minutes)</label><input type="number" id="MIN_AGE_MINS" value="0"></div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-robot"></i> Auto-Sell Strategy</div>
+        <div class="grid-3">
+            <div class="input-group"><label>Enable Auto-Sell</label><select id="AUTO_SELL_ENABLED"><option value="false">No</option><option value="true">Yes</option></select></div>
+            <div class="input-group"><label>Stop Loss Percentage (%)</label><input type="number" id="STOP_LOSS_PERCENT" value="-20"></div>
+            <div class="input-group"><label>---</label><div style="color:var(--text-muted); font-size:10px; padding-top:10px;">(Stop Loss Always Sells 100%)</div></div>
+        </div>
+        <div class="grid-3">
+            <div class="input-group"><label>Take-Profit Stage 1 Gain (%)</label><input type="number" id="TP1_PERCENT" value="100"></div>
+            <div class="input-group"><label>Take-Profit Stage 1 Sell Amount (%)</label><input type="number" id="TP1_AMOUNT" value="50"></div>
+        </div>
+        <div class="grid-3">
+            <div class="input-group"><label>Take-Profit Stage 2 Gain (%)</label><input type="number" id="TP2_PERCENT" value="200"></div>
+            <div class="input-group"><label>Take-Profit Stage 2 Sell Amount (%)</label><input type="number" id="TP2_AMOUNT" value="100"></div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-shield-halved"></i> Security Checks (Solana Only)</div>
+        <div class="grid-3">
+            <div class="input-group"><label>Reject Burned Liquidity</label><select id="CHECK_IF_BURNED"><option>false</option><option>true</option></select></div>
+            <div class="input-group"><label>RugCheck.xyz Validation</label><select id="RUGCHECK_XYZ_CHECK"><option>false</option><option>true</option></select></div>
+        </div>
+        <button class="btn btn-yellow" onclick="saveSettings()" style="width:100%; margin-top:10px;"><i class="fa-solid fa-floppy-disk"></i> Save Configuration</button>
+    </div>
+
+    <div id="view-radar" class="screen-view active">
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header"><span><i class="fa-solid fa-satellite-dish"></i> Target Scanner</span></div>
+                <div class="panel-content">
+                    <div class="manual-snipe-box">
+                        <input type="text" id="manualTarget" class="manual-input" placeholder="Awaiting Scanner or Paste Contract Address...">
+                        <button class="btn btn-green" onclick="scanTarget()"><i class="fa-solid fa-magnifying-glass"></i> Scan</button>
+                    </div>
+                    <div id="target-navigator"><button class="btn" style="padding:6px 12px;" onclick="prevTarget()"><</button><span id="target-counter">Target 1 / 10</span><button class="btn" style="padding:6px 12px;" onclick="nextTarget()">></button></div>
+                    
+                    <div id="scan-card">
+                        <img id="sc-header-img" class="ds-header-img" src="" alt="Banner">
+                        <div id="sc-socials" class="ds-socials" style="display:none;"></div>
+                        
+                        <div class="ds-inner-pad">
+                            <div class="scan-title">
+                                <span id="sc-name" style="display:flex; align-items:center; gap:8px;">Awaiting Target</span>
+                                <button class="btn" style="padding: 6px 10px;" onclick="addCurrentToWatchlist()"><i class="fa-solid fa-plus"></i> Watchlist</button>
+                            </div>
+                            
+                            <div class="scan-data-grid">
+                                <div class="sd-box"><div class="sd-label">Price USD</div><div class="sd-val" id="sc-price">--</div></div>
+                                <div class="sd-box"><div class="sd-label" id="sc-price-coin-label">Price Coin</div><div class="sd-val" style="color:var(--text-main);" id="sc-price-coin">--</div></div>
+                                <div class="sd-box"><div class="sd-label">Market Cap</div><div class="sd-val" id="sc-mc">--</div></div>
+                                <div class="sd-box"><div class="sd-label">Liquidity</div><div class="sd-val" id="sc-liq">--</div></div>
+                            </div>
+                            
+                            <div class="time-ribbon">
+                                <span>Age: <b id="sc-age" style="color:var(--text-main);">--</b></span>
+                                <span>5M: <b id="sc-5m">--</b></span>
+                                <span>1H: <b id="sc-1h">--</b></span>
+                                <span>6H: <b id="sc-6h">--</b></span>
+                                <span>24H: <b id="sc-24h">--</b></span>
+                            </div>
+
+                            <div class="ds-split">
+                                <div>
+                                    <div class="ds-row"><span>TXNS</span><span id="sc-txns" style="color:var(--text-main); font-weight:bold;">--</span></div>
+                                    <div class="ds-row" style="margin-top:15px;"><span>VOLUME</span><span id="sc-vol" style="color:var(--text-main); font-weight:bold;">--</span></div>
+                                </div>
+                                <div>
+                                    <div class="ds-row"><span>BUYS <span id="sc-buys-num">0</span></span><span>SELLS <span id="sc-sells-num">0</span></span></div>
+                                    <div class="ds-bar-wrap"><div class="ds-bar-green" id="sc-txn-bar" style="width:50%;"></div></div>
+                                    
+                                    <div class="ds-row" style="margin-top:15px;"><span>BUY VOL</span><span>SELL VOL</span></div>
+                                    <div class="ds-bar-wrap"><div class="ds-bar-green" id="sc-vol-bar" style="width:50%;"></div></div>
+                                </div>
+                            </div>
+
+                            <div id="ai-insight-box" style="display:none;">
+                                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:10px;">
+                                    <span style="color:var(--text-muted); font-weight:bold;"><i class="fa-solid fa-brain"></i> AI Sentiment Analysis</span>
+                                    <span>Action: <b id="ai-action">--</b></span>
+                                </div>
+                                <div id="ai-reasoning-list" style="color: var(--text-main);"></div>
+                            </div>
+                            
+                            <button class="btn btn-yellow" style="width:100%; font-size: 14px; padding: 15px;" onclick="executeManual()"><i class="fa-solid fa-bolt"></i> Execute Buy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header"><span style="color:var(--yellow)"><i class="fa-solid fa-vault"></i> Open Positions</span></div>
+                <div class="panel-content">
+                    <div id="positions-container" class="positions-container">
+                        <div style="text-align:center; padding:30px; color:var(--text-muted);">No Active Positions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-watchlist" class="screen-view">
+        <div class="panel">
+            <div class="panel-header"><span style="color:var(--yellow)"><i class="fa-solid fa-list"></i> Watchlist</span></div>
+            <div class="panel-content">
+                <div class="manual-snipe-box" style="max-width: 600px;">
+                    <input type="text" id="watchInput" class="manual-input" placeholder="Paste Contract Address to Track...">
+                    <button class="btn btn-yellow" onclick="manualAddWatchlist()"><i class="fa-solid fa-eye"></i> Track Token</button>
+                </div>
+                <div id="watchlist-container" class="positions-container" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-feed" class="screen-view">
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:var(--yellow)"><i class="fa-solid fa-satellite-dish"></i> Scouted Targets (Live Signals)</span>
+            </div>
+            <div class="panel-content">
+                <div id="feed-container" class="positions-container" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));"></div>
+                <div id="feed-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
+                    <button class="btn" onclick="prevFeedPage()"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                    <span id="feed-page-info" style="color:var(--yellow); font-weight:bold;">Page 1</span>
+                    <button class="btn" onclick="nextFeedPage()">Next <i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-terminal" class="screen-view">
+        <div class="panel">
+            <div class="panel-header">
+                <span><i class="fa-solid fa-terminal"></i> Activity Logs</span>
+                <button class="btn btn-red" style="padding: 6px 15px;" onclick="clearLogs()"><i class="fa-solid fa-trash"></i> Clear Logs</button>
+            </div>
+            <div class="session-log" id="bot-logs"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const letters = '010101XYZSYS'.split('');
+        const fontSize = 12;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        const socket = io();
+        let botActive = false;
+        
+        let prices = { SOL: 0, BSC: 0, ETH: 0 };
+        
+        let targetQueue = [];
+        let currentTargetIndex = 0;
+        let aiIntelligence = {}; 
+        
+        let dbPositions = {};
+        let dbWatchlist = [];
+        let dbFeed = [];
+        let cachedMeta = {}; 
+        let dbStats = { trades: 0, wins: 0, losses: 0, pnl: 0, solBal: 0, wsolBal: 0, bscBal: 0, ethBal: 0 };
+
+        // 🚀 PAGINATION STATE
+        let currentFeedPage = 1;
+        const feedItemsPerPage = 12;
+
+        const configFields = ["ACTIVE_NETWORK", "SCAN_SOURCE", "RADAR_CATEGORY", "PRIVATE_KEY","RPC_ENDPOINT","RPC_WEBSOCKET_ENDPOINT","COMMITMENT_LEVEL","QUOTE_AMOUNT","BUY_SLIPPAGE","COMPUTE_UNIT_PRICE", "BSC_PRIVATE_KEY", "BSC_RPC", "BSC_SLIPPAGE", "ETH_PRIVATE_KEY", "ETH_RPC", "ETH_SLIPPAGE", "AUTO_SELL_ENABLED","STOP_LOSS_PERCENT","TP1_PERCENT","TP1_AMOUNT","TP2_PERCENT","TP2_AMOUNT", "MIN_LIQUIDITY", "MIN_MCAP", "MIN_AGE_MINS", "SCAN_LIMIT", "CHECK_IF_BURNED","RUGCHECK_XYZ_CHECK"];
+
+        async function fetchPricesFrontend() {
+            try {
+                let r = await fetch('https://min-api.cryptocompare.com/data/pricemulti?fsyms=SOL,BNB,ETH&tsyms=USD');
+                let d = await r.json();
+                if(d?.SOL?.USD) prices.SOL = d.SOL.USD;
+                if(d?.BNB?.USD) prices.BSC = d.BNB.USD;
+                if(d?.ETH?.USD) prices.ETH = d.ETH.USD;
+                renderDashboard();
+            } catch(e) {}
+        }
+        fetchPricesFrontend();
+        setInterval(fetchPricesFrontend, 15000);
+
+        socket.on('init_data', (data) => {
+            if (data.config) configFields.forEach(id => { if (data.config[id] !== undefined && document.getElementById(id)) document.getElementById(id).value = data.config[id]; });
+            if (data.stats) {
+                dbStats = data.stats;
+                if (data.stats.solPriceUsd > 0) prices.SOL = data.stats.solPriceUsd;
+                if (data.stats.bnbPriceUsd > 0) prices.BSC = data.stats.bnbPriceUsd;
+                if (data.stats.ethPriceUsd > 0) prices.ETH = data.stats.ethPriceUsd;
+            }
+            if (data.logs) { const lb = document.getElementById('bot-logs'); lb.innerHTML = ''; data.logs.forEach(l => appendLogUI(l)); }
+            if (data.positions) dbPositions = data.positions; 
+            if (data.watchlist) dbWatchlist = data.watchlist; 
+            if (data.feed) dbFeed = data.feed;
+
+            if (data.lockedTargets && data.lockedTargets.length > 0) {
+                targetQueue = data.lockedTargets;
+                currentTargetIndex = 0;
+                loadTargetIntoUI(0);
+                updateNavigator();
+            }
+            
+            switchNetwork(); 
+        });
+
+        socket.on('feed_update', (feed) => {
+            dbFeed = feed;
+            renderFeed();
+        });
+
+        function switchNetwork() {
+            const net = document.getElementById('ACTIVE_NETWORK').value;
+            const pnlLabel = document.getElementById('net-profit-label');
+            const wsolBox = document.getElementById('wsol-box');
+            const coinName = document.getElementById('coin-name');
+            const coinIcon = document.getElementById('coin-icon');
+
+            if (net === 'SOL') {
+                pnlLabel.innerHTML = '<i class="fa-solid fa-sack-dollar"></i> Net Profit (SOL)';
+                wsolBox.style.display = 'block';
+                coinName.innerText = 'SOL';
+                coinIcon.className = 'fa-solid fa-bolt';
+            } else if (net === 'BSC') {
+                pnlLabel.innerHTML = '<i class="fa-solid fa-sack-dollar"></i> Net Profit (BNB)';
+                wsolBox.style.display = 'none';
+                coinName.innerText = 'BNB';
+                coinIcon.className = 'fa-brands fa-btc'; 
+            } else if (net === 'ETH') {
+                pnlLabel.innerHTML = '<i class="fa-solid fa-sack-dollar"></i> Net Profit (ETH)';
+                wsolBox.style.display = 'none';
+                coinName.innerText = 'ETH';
+                coinIcon.className = 'fa-brands fa-ethereum';
+            }
+            
+            currentFeedPage = 1; // Reset pagination when switching networks
+            saveSettings();
+            renderDashboard();
+            renderPositions(); 
+            renderWatchlist();
+            renderFeed();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.screen-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tabId}`).classList.add('active');
+            if(tabId === 'terminal') { const lb = document.getElementById('bot-logs'); lb.scrollTop = lb.scrollHeight; }
+        }
+
+        function loadToScanner(mint) {
+            document.getElementById('manualTarget').value = mint;
+            switchTab('radar');
+            scanTarget();
+            window.scrollTo(0,0);
+        }
+
+        socket.on('update_ui', (stats) => {
+            if (stats.solPriceUsd > 0) prices.SOL = stats.solPriceUsd;
+            if (stats.bnbPriceUsd > 0) prices.BSC = stats.bnbPriceUsd;
+            if (stats.ethPriceUsd > 0) prices.ETH = stats.ethPriceUsd;
+            dbStats = stats;
+            renderDashboard();
+        });
+
+        function renderDashboard() {
+            let floatingPnl = 0;
+            let floatingWins = 0;
+            let floatingLosses = 0;
+            const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+            const prefix = activeNetwork.toLowerCase();
+
+            const defaultInvested = parseFloat(document.getElementById('QUOTE_AMOUNT').value || 0.05);
+
+            for (const mint in dbPositions) {
+                const pos = dbPositions[mint];
+                const posChain = pos.chain || 'SOL';
+                
+                if (posChain !== activeNetwork) continue;
+
+                const meta = cachedMeta[mint];
+                const isClosed = pos.status === 'CLOSED' || pos.status === 'MANUAL CLOSED';
+
+                if (!isClosed && pos.entryPrice > 0 && meta && meta.priceUsd > 0) {
+                    const invested = pos.entrySolAmount || defaultInvested;
+                    const ratio = meta.priceUsd / pos.entryPrice;
+                    const pnl = (invested * ratio) - invested;
+
+                    floatingPnl += pnl;
+                    if (pnl >= 0) floatingWins++;
+                    else floatingLosses++;
+                }
+            }
+
+            let mainBal = 0;
+            let currentPrice = prices.SOL;
+
+            if (activeNetwork === 'SOL') {
+                mainBal = parseFloat(dbStats.solBal || 0);
+                currentPrice = prices.SOL || 0;
+            } else if (activeNetwork === 'BSC') {
+                mainBal = parseFloat(dbStats.bscBal || 0);
+                currentPrice = prices.BSC || 0;
+            } else if (activeNetwork === 'ETH') {
+                mainBal = parseFloat(dbStats.ethBal || 0);
+                currentPrice = prices.ETH || 0;
+            }
+
+            document.getElementById('ui-sol').innerText = mainBal.toFixed(4);
+            document.getElementById('ui-sol-usd').innerText = `($${(mainBal * currentPrice).toFixed(2)})`;
+            
+            if (activeNetwork === 'SOL') {
+                const wsBal = parseFloat(dbStats.wsolBal || 0);
+                document.getElementById('ui-wsol').innerText = wsBal.toFixed(4);
+                document.getElementById('ui-wsol-usd').innerText = `($${(wsBal * currentPrice).toFixed(2)})`;
+            }
+
+            let baseTrades = dbStats[`${prefix}_trades`] || (activeNetwork === 'SOL' ? dbStats.trades : 0);
+            let baseWins = dbStats[`${prefix}_wins`] || (activeNetwork === 'SOL' ? dbStats.wins : 0);
+            let baseLosses = dbStats[`${prefix}_losses`] || (activeNetwork === 'SOL' ? dbStats.losses : 0);
+            let basePnl = dbStats[`${prefix}_pnl`] || (activeNetwork === 'SOL' ? dbStats.pnl : 0);
+
+            document.getElementById('ui-trades').innerText = baseTrades;
+            document.getElementById('ui-wins').innerText = baseWins + floatingWins;
+            document.getElementById('ui-losses').innerText = baseLosses + floatingLosses;
+
+            const totalPnl = basePnl + floatingPnl;
+            const pnlEl = document.getElementById('ui-pnl');
+            pnlEl.innerText = (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(4);
+            pnlEl.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        }
+
+        function appendLogUI(data) {
+            const logBox = document.getElementById('bot-logs');
+            const div = document.createElement('div');
+            div.className = `log-entry ${data.type || ''}`;
+            div.innerText = `> ${data.msg}`;
+            logBox.appendChild(div);
+            if(document.getElementById('view-terminal').classList.contains('active')) { logBox.scrollTop = logBox.scrollHeight; }
+        }
+        
+        socket.on('bot_log', (data) => {
+            appendLogUI(data);
+            if(data.msg.includes("IGNITING RECON RADAR")) {
+                targetQueue = []; currentTargetIndex = 0;
+                document.getElementById('target-navigator').style.display = 'none';
+                document.getElementById('scan-card').style.display = 'none';
+            }
+        });
+        function clearLogs() { socket.emit('clear_logs'); document.getElementById('bot-logs').innerHTML = ''; }
+
+        socket.on('token_scanned', (ca) => {
+            if (!targetQueue.includes(ca)) {
+                targetQueue.push(ca);
+                if (targetQueue.length === 1) loadTargetIntoUI(0);
+                updateNavigator();
+            }
+        });
+        
+        socket.on('radar_paused', () => { 
+            botActive = false; 
+            document.getElementById('botBtn').innerHTML = "<i class='fa-solid fa-play'></i> Start Scanner"; 
+            document.getElementById('botBtn').className = "btn btn-green"; 
+        });
+
+        function loadTargetIntoUI(index) {
+            if (targetQueue.length === 0) return;
+            currentTargetIndex = index;
+            document.getElementById('manualTarget').value = targetQueue[currentTargetIndex];
+            scanTarget(); updateNavigator();
+        }
+        function updateNavigator() {
+            const nav = document.getElementById('target-navigator');
+            if (targetQueue.length > 1) { nav.style.display = 'flex'; document.getElementById('target-counter').innerText = `Target ${currentTargetIndex + 1} / ${targetQueue.length}`; } 
+            else { nav.style.display = 'none'; }
+        }
+        function prevTarget() { if (currentTargetIndex > 0) loadTargetIntoUI(currentTargetIndex - 1); }
+        function nextTarget() { if (currentTargetIndex < targetQueue.length - 1) loadTargetIntoUI(currentTargetIndex + 1); }
+
+        socket.on('ai_raw_line', (line) => {
+            let latestTarget = targetQueue[targetQueue.length - 1];
+            if (!latestTarget) return;
+            if (!aiIntelligence[latestTarget]) aiIntelligence[latestTarget] = { action: '--', reasoning: '' };
+            if (line.includes('"action":')) { const m = line.match(/"action":\s*"([^"]+)"/); if(m) aiIntelligence[latestTarget].action = m[1]; }
+            if (line.includes('"reasoning":') || line.includes('"notes":')) {
+                const m = line.match(/(?:"reasoning"|"notes"):\s*"(?:AI:\s*)?([^"]+)"/);
+                if(m) { aiIntelligence[latestTarget].reasoning = m[1]; if (targetQueue[currentTargetIndex] === latestTarget) renderAiData(latestTarget); }
+            }
+        });
+
+        function renderAiData(target) {
+            const box = document.getElementById('ai-insight-box');
+            const data = aiIntelligence[target];
+            if (!data || !data.reasoning) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            document.getElementById('ai-action').innerText = data.action;
+            document.getElementById('ai-action').style.color = (data.action === 'ENTER') ? 'var(--yellow)' : 'var(--red)';
+            let html = '';
+            for (let p of data.reasoning.split('|')) {
+                let clean = p.trim();
+                if (!clean) continue;
+                if (clean.includes('(-')) html += `<div style="color: var(--red); margin-bottom: 2px;">[-] ${clean}</div>`;
+                else if (clean.includes('(+')) html += `<div style="color: var(--green); margin-bottom: 2px;">[+] ${clean}</div>`;
+                else html += `<div style="color: var(--text-main); margin-bottom: 2px;">[>] ${clean}</div>`;
+            }
+            document.getElementById('ai-reasoning-list').innerHTML = html;
+        }
+
+        async function fetchTokenMetadata(mint) {
+            try {
+                const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`);
+                const data = await res.json();
+                const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+                
+                let pair = null;
+                if (data.pairs) {
+                    if (activeNetwork === 'SOL') pair = data.pairs.find(p => p.chainId === 'solana');
+                    else if (activeNetwork === 'BSC') pair = data.pairs.find(p => p.chainId === 'bsc');
+                    else if (activeNetwork === 'ETH') pair = data.pairs.find(p => p.chainId === 'ethereum');
+                    if (!pair) pair = data.pairs[0];
+                }
+                
+                if (pair) {
+                    let ageStr = '--';
+                    if (pair.pairCreatedAt) {
+                        const ageMins = Math.floor((Date.now() - new Date(pair.pairCreatedAt).getTime()) / 60000);
+                        if (ageMins < 60) ageStr = `${ageMins}m`;
+                        else if (ageMins < 1440) ageStr = `${(ageMins/60).toFixed(1)}h`;
+                        else ageStr = `${(ageMins/1440).toFixed(1)}d`;
+                    }
+
+                    let imageUrl = pair.info?.imageUrl || '';
+                    let headerUrl = pair.info?.header || '';
+                    let socials = pair.info?.socials || [];
+                    
+                    let txns24h = pair.txns?.h24 || { buys: 0, sells: 0 };
+                    let m5 = pair.priceChange?.m5 || 0;
+
+                    cachedMeta[mint] = {
+                        name: pair.baseToken.name, symbol: pair.baseToken.symbol, priceUsd: parseFloat(pair.priceUsd),
+                        mcap: pair.fdv || 0, fdv: pair.fdv || 0, vol24h: pair.volume?.h24 || 0, liq: pair.liquidity?.usd || 0,
+                        m5: m5, h1: pair.priceChange?.h1 || 0, h6: pair.priceChange?.h6 || 0, h24: pair.priceChange?.h24 || 0,
+                        txns24h: txns24h, ageStr: ageStr, trueMint: pair.baseToken.address, chainId: pair.chainId, 
+                        imageUrl: imageUrl, headerUrl: headerUrl, socials: socials
+                    };
+                    return cachedMeta[mint];
+                }
+            } catch (e) {}
+            
+            cachedMeta[mint] = { name: "Unknown Asset", symbol: "WAITING", priceUsd: 0, mcap: 0, fdv: 0, vol24h: 0, liq: 0, m5: 0, h1: 0, h6: 0, h24: 0, ageStr: '--', trueMint: mint, chainId: 'unknown', imageUrl: '', headerUrl: '', socials: [], txns24h: {buys:0, sells:0} };
+            return cachedMeta[mint];
+        }
+
+        function formatChange(val) {
+            if (val === 0) return `<span class="sd-val">--</span>`;
+            return val > 0 ? `<span class="sd-val pos">+${val}%</span>` : `<span class="sd-val neg">${val}%</span>`;
+        }
+
+        async function scanTarget() {
+            const target = document.getElementById('manualTarget').value.trim();
+            if (target.length > 30) {
+                document.getElementById('scan-card').style.display = 'flex';
+                document.getElementById('sc-name').innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Loading Data...";
+                const meta = await fetchTokenMetadata(target);
+                
+                if (meta.trueMint && meta.trueMint !== target) document.getElementById('manualTarget').value = meta.trueMint;
+                const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+
+                // 🚀 EMIT MANUAL SCAN TO PERMANENT FEED
+                socket.emit('manual_scan_add', meta.trueMint);
+
+                const headerImg = document.getElementById('sc-header-img');
+                if (meta.headerUrl) { headerImg.src = meta.headerUrl; headerImg.style.display = 'block'; } 
+                else { headerImg.style.display = 'none'; }
+
+                const socialsDiv = document.getElementById('sc-socials');
+                if (meta.socials && meta.socials.length > 0) {
+                    let sHtml = '';
+                    meta.socials.forEach(s => {
+                        let icon = 'fa-globe';
+                        if (s.type === 'twitter') icon = 'fa-twitter fa-brands';
+                        if (s.type === 'telegram') icon = 'fa-telegram fa-brands';
+                        sHtml += `<a href="${s.url}" target="_blank"><i class="fa-solid ${icon}"></i> ${s.type.toUpperCase()}</a>`;
+                    });
+                    socialsDiv.innerHTML = sHtml; socialsDiv.style.display = 'flex';
+                } else { socialsDiv.style.display = 'none'; }
+
+                const sentimentClass = meta.h24 >= 0 ? 'pos' : 'neg';
+                
+                let badgeColor = '#fff'; let icon = 'fa-link';
+                if (meta.chainId === 'solana') { badgeColor = 'var(--green)'; icon = 'fa-bolt'; }
+                if (meta.chainId === 'bsc') { badgeColor = 'var(--yellow)'; icon = 'fa-btc'; }
+                if (meta.chainId === 'ethereum') { badgeColor = 'var(--blue)'; icon = 'fa-ethereum'; }
+
+                let imgHtml = meta.imageUrl 
+                    ? `<img src="${meta.imageUrl}" style="width:24px; height:24px; border-radius:50%; border:1px solid var(--border);">` 
+                    : `<div style="width:24px; height:24px; border-radius:50%; background:var(--panel); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fa-solid fa-coins"></i></div>`;
+
+                document.getElementById('sc-name').innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${imgHtml}
+                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+                            ${meta.name} [${meta.symbol}] 
+                            <span style="font-size:10px; border:1px solid ${badgeColor}; color:${badgeColor}; padding:2px 6px; border-radius: 4px;">
+                                <i class="fa-solid ${icon}"></i> ${meta.chainId.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>`;
+                
+                document.getElementById('sc-price').innerText = meta.priceUsd > 0 ? `$${meta.priceUsd.toFixed(8)}` : '--';
+                document.getElementById('sc-price-coin-label').innerText = `Price ${activeNetwork}`;
+                let coinPriceVal = (meta.priceUsd > 0 && prices[activeNetwork] > 0) ? (meta.priceUsd / prices[activeNetwork]) : 0;
+                document.getElementById('sc-price-coin').innerText = coinPriceVal > 0 ? `${coinPriceVal.toFixed(8)} ${activeNetwork}` : '--';
+
+                document.getElementById('sc-mc').innerText = meta.mcap > 0 ? `$${Math.floor(meta.mcap).toLocaleString()}` : '--';
+                document.getElementById('sc-liq').innerText = meta.liq > 0 ? `$${Math.floor(meta.liq).toLocaleString()}` : '--';
+
+                document.getElementById('sc-5m').innerHTML = formatChange(meta.m5);
+                document.getElementById('sc-1h').innerHTML = formatChange(meta.h1);
+                document.getElementById('sc-6h').innerHTML = formatChange(meta.h6);
+                document.getElementById('sc-24h').innerHTML = formatChange(meta.h24);
+
+                const totalTxns = (meta.txns24h.buys || 0) + (meta.txns24h.sells || 0);
+                document.getElementById('sc-txns').innerText = totalTxns.toLocaleString();
+                document.getElementById('sc-vol').innerText = meta.vol24h > 0 ? `$${Math.floor(meta.vol24h).toLocaleString()}` : '--';
+                document.getElementById('sc-age').innerText = meta.ageStr;
+
+                document.getElementById('sc-buys-num').innerText = (meta.txns24h.buys || 0).toLocaleString();
+                document.getElementById('sc-sells-num').innerText = (meta.txns24h.sells || 0).toLocaleString();
+                
+                let buyPct = 50;
+                if (totalTxns > 0) buyPct = ((meta.txns24h.buys || 0) / totalTxns) * 100;
+                document.getElementById('sc-txn-bar').style.width = `${buyPct}%`;
+                document.getElementById('sc-vol-bar').style.width = `${buyPct}%`;
+            }
+        }
+
+        socket.on('position_update', (positions) => { dbPositions = positions; renderPositions(); });
+        function removePosition(mint) { event.stopPropagation(); if(confirm("Remove this record from your UI Vault? (This does NOT sell the token)")) socket.emit('delete_position', mint); }
+
+        async function renderPositions() {
+            const container = document.getElementById('positions-container');
+            const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+            
+            let html = '';
+            let count = 0;
+            const defaultInvested = parseFloat(document.getElementById('QUOTE_AMOUNT').value || 0.05);
+
+            for (const mint in dbPositions) {
+                const pos = dbPositions[mint];
+                const posChain = pos.chain || 'SOL';
+                
+                if (posChain !== activeNetwork) continue;
+                
+                count++;
+                const meta = cachedMeta[mint] || { name: "Loading...", symbol: "...", priceUsd: 0, h1: 0, imageUrl: '', mcap: 0 };
+                const isClosed = pos.status === 'CLOSED' || pos.status === 'MANUAL CLOSED';
+                
+                const invested = pos.entrySolAmount || defaultInvested;
+                let currentSolValue = invested;
+                let pnlSol = 0;
+                let pnlPct = 0;
+
+                let multText = "--", multColor = "var(--text-muted)", multBorder = "var(--border)";
+                if (pos.entryPrice > 0 && meta.priceUsd > 0 && !isClosed) {
+                    const ratio = meta.priceUsd / pos.entryPrice;
+                    currentSolValue = invested * ratio;
+                    pnlSol = currentSolValue - invested;
+                    pnlPct = (ratio - 1) * 100;
+
+                    multText = `${ratio.toFixed(2)}x`;
+                    if (ratio >= 2.0) { multColor = "var(--yellow)"; multBorder = "var(--yellow)"; }
+                    else if (ratio > 1.0) { multColor = "var(--green)"; multBorder = "var(--green)"; } 
+                    else if (ratio < 1.0) { multColor = "var(--red)"; multBorder = "var(--red)"; }
+                }
+
+                const pnlClass = pnlPct >= 0 ? 'pos' : 'neg';
+                const pnlContainerClass = pnlPct >= 0 ? 'live-pnl' : 'live-loss';
+
+                let imgHtml = meta.imageUrl 
+                    ? `<img src="${meta.imageUrl}" style="width:20px; height:20px; border-radius:50%; border:1px solid var(--border);">` 
+                    : `<i class="fa-solid fa-coins" style="color:var(--text-muted)"></i>`;
+
+                html += `
+                <div class="position-card ${isClosed ? 'closed' : ''}">
+                    <div class="clickable-area" onclick="loadToScanner('${mint}')">
+                        <div class="pos-header">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                ${imgHtml}
+                                <div><span class="pos-title">${meta.name}</span> <span class="pos-symbol">[${meta.symbol}]</span></div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap: 8px;">
+                                <span style="font-size:10px; border:1px solid #444; padding:2px; color:#aaa;"><i class="fa-solid fa-link"></i> ${posChain}</span>
+                                <div class="multiplier-badge" style="color: ${multColor}; border-color: ${multBorder};">${multText}</div>
+                                <button class="delete-btn" onclick="removePosition('${mint}')"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                        <div class="pos-mint">${mint}</div>
+                        
+                        <div class="pos-stats">
+                            <span>Entry: $${pos.entryPrice ? pos.entryPrice.toFixed(6) : '--'}</span>
+                            <span>Now: $${meta.priceUsd > 0 ? meta.priceUsd.toFixed(6) : '--'} (<b class="${pnlClass}">${pnlPct > 0 ? '+' : ''}${pnlPct.toFixed(2)}%</b>)</span>
+                        </div>
+
+                        <div class="pos-stats" style="margin-top:-6px;">
+                            <span>MC Entry: $${pos.entryMcap ? Math.floor(pos.entryMcap).toLocaleString() : '--'}</span>
+                            <span>MC Now: $${meta.mcap > 0 ? Math.floor(meta.mcap).toLocaleString() : '--'}</span>
+                        </div>
+
+                        ${!isClosed ? `
+                        <div class="pos-stats ${pnlContainerClass}" style="margin-top:-6px;">
+                            <span>Inv: ${invested.toFixed(4)} ${posChain}</span>
+                            <span>PNL: <b class="${pnlClass}">${pnlSol > 0 ? '+' : ''}${pnlSol.toFixed(4)} ${posChain}</b></span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${!isClosed ? `
+                    <div class="action-row">
+                        <button class="btn btn-red" onclick="executeManualSell('${mint}', 25)">Sell 25%</button>
+                        <button class="btn btn-red" onclick="executeManualSell('${mint}', 50)">Sell 50%</button>
+                        <button class="btn btn-red" onclick="executeManualSell('${mint}', 100)">Sell 100%</button>
+                    </div>` : ''}
+                </div>`;
+            }
+
+            if (count === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-folder-open fa-2x" style="margin-bottom:10px; display:block;"></i> No Active Positions on ${activeNetwork}</div>`;
+            } else {
+                container.innerHTML = html;
+            }
+            renderDashboard(); 
+        }
+
+        function manualAddWatchlist() { 
+            const target = document.getElementById('watchInput').value.trim(); 
+            if(target.length > 30 && !dbWatchlist.includes(target)) { 
+                socket.emit('add_watchlist', target); 
+                document.getElementById('watchInput').value = ''; 
+            } 
+        }
+        function removeWatchlist(mint) { event.stopPropagation(); socket.emit('remove_watchlist', mint); }
+
+        async function renderWatchlist() {
+            const container = document.getElementById('watchlist-container');
+            const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+
+            let html = '';
+            let count = 0;
+
+            for (const mint of dbWatchlist) {
+                const meta = cachedMeta[mint] || { name: "Loading...", symbol: "...", priceUsd: 0, h1: 0, mcap: 0, h24: 0, chainId: 'unknown', imageUrl: '' };
+                
+                let showCard = false;
+                if (activeNetwork === 'SOL' && (meta.chainId === 'solana' || meta.chainId === 'unknown')) showCard = true;
+                if (activeNetwork === 'BSC' && meta.chainId === 'bsc') showCard = true;
+                if (activeNetwork === 'ETH' && meta.chainId === 'ethereum') showCard = true;
+
+                if (!showCard) continue;
+                count++;
+
+                let imgHtml = meta.imageUrl 
+                    ? `<img src="${meta.imageUrl}" style="width:20px; height:20px; border-radius:50%; border:1px solid var(--border);">` 
+                    : `<i class="fa-solid fa-coins" style="color:var(--text-muted)"></i>`;
+
+                html += `
+                <div class="position-card clickable-area" onclick="loadToScanner('${mint}')">
+                    <div class="pos-header">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            ${imgHtml}
+                            <div><span class="pos-title">${meta.name}</span> <span class="pos-symbol">[${meta.symbol}]</span></div>
+                        </div>
+                        <button class="delete-btn" onclick="removeWatchlist('${mint}')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="pos-mint">${mint}</div>
+                    <div class="pos-stats">
+                        <span>Price: $${meta.priceUsd > 0 ? meta.priceUsd.toFixed(6) : '--'}</span>
+                        <span>MCAP: $${meta.mcap > 0 ? Math.floor(meta.mcap).toLocaleString() : '--'}</span>
+                    </div>
+                    <div class="pos-stats" style="margin-top: -5px;">
+                        <span>1H: <b class="${meta.h1 >= 0 ? 'pos' : 'neg'}">${meta.h1 > 0 ? '+' : ''}${meta.h1}%</b></span>
+                        <span>24H: <b class="${meta.h24 >= 0 ? 'pos' : 'neg'}">${meta.h24 > 0 ? '+' : ''}${meta.h24}%</b></span>
+                    </div>
+                </div>`;
+            }
+
+            if (count === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column: 1 / -1;"><i class="fa-solid fa-eye-slash fa-2x" style="margin-bottom:10px; display:block;"></i> Watchlist is empty on ${activeNetwork}.</div>`;
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
+        // 🚀 PAGINATION LOGIC
+        function nextFeedPage() {
+            const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+            const networkFeed = dbFeed.filter(f => f.chain === activeNetwork);
+            if (currentFeedPage * feedItemsPerPage < networkFeed.length) {
+                currentFeedPage++;
+                renderFeed();
+            }
+        }
+
+        function prevFeedPage() {
+            if (currentFeedPage > 1) {
+                currentFeedPage--;
+                renderFeed();
+            }
+        }
+
+        function removeFeedItem(mint) { event.stopPropagation(); socket.emit('delete_feed_item', mint); }
+
+        function renderFeed() {
+            const container = document.getElementById('feed-container');
+            const activeNetwork = document.getElementById('ACTIVE_NETWORK').value;
+            
+            // Filter by network
+            const networkFeed = dbFeed.filter(f => f.chain === activeNetwork);
+            
+            if (networkFeed.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column: 1 / -1;"><i class="fa-solid fa-tower-broadcast fa-2x" style="margin-bottom:10px; display:block;"></i> No Intelligence on ${activeNetwork}. Start Scanner.</div>`;
+                document.getElementById('feed-pagination').style.display = 'none';
+                return;
+            }
+
+            // Calculate Pagination
+            const totalPages = Math.ceil(networkFeed.length / feedItemsPerPage) || 1;
+            if (currentFeedPage > totalPages) currentFeedPage = totalPages;
+            
+            document.getElementById('feed-page-info').innerText = `Page ${currentFeedPage} of ${totalPages} (Total: ${networkFeed.length})`;
+            document.getElementById('feed-pagination').style.display = 'flex';
+
+            const startIdx = (currentFeedPage - 1) * feedItemsPerPage;
+            const paginatedFeed = networkFeed.slice(startIdx, startIdx + feedItemsPerPage);
+
+            let html = '';
+
+            for (const item of paginatedFeed) {
+                const meta = cachedMeta[item.mint] || { priceUsd: 0, mcap: 0 };
+                let currentPrice = meta.priceUsd > 0 ? meta.priceUsd : item.initialPrice;
+                let currentMcap = meta.mcap > 0 ? meta.mcap : item.initialMcap;
+
+                let multiplier = 1;
+                let mcapDiff = 0;
+                
+                if (item.initialPrice > 0) multiplier = currentPrice / item.initialPrice;
+                if (item.initialMcap > 0) mcapDiff = currentMcap - item.initialMcap;
+
+                const mClass = multiplier >= 1 ? 'pos' : 'neg';
+                const dClass = mcapDiff >= 0 ? 'pos' : 'neg';
+
+                const timeElapsed = Math.floor((Date.now() - item.time) / 60000);
+                const timeStr = timeElapsed < 1 ? 'Just Now' : `${timeElapsed}m ago`;
+
+                let imgHtml = item.imageUrl 
+                    ? `<img src="${item.imageUrl}" style="width:20px; height:20px; border-radius:50%; border:1px solid var(--border);">` 
+                    : `<i class="fa-solid fa-satellite-dish" style="color:var(--text-muted)"></i>`;
+
+                html += `
+                <div class="position-card clickable-area" onclick="loadToScanner('${item.mint}')">
+                    <div class="pos-header">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            ${imgHtml}
+                            <div><span class="pos-title">${item.name}</span> <span class="pos-symbol">[${item.symbol}]</span></div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:10px; color:var(--text-muted);">${timeStr}</span>
+                            <button class="delete-btn" onclick="removeFeedItem('${item.mint}')"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    <div class="pos-mint">${item.mint}</div>
+                    
+                    <div class="pos-stats">
+                        <span>Init Price: $${item.initialPrice > 0 ? item.initialPrice.toFixed(8) : '--'}</span>
+                        <span>Now: $${currentPrice > 0 ? currentPrice.toFixed(8) : '--'} (<b class="${mClass}">${multiplier.toFixed(2)}x</b>)</span>
+                    </div>
+                    
+                    <div class="pos-stats" style="margin-top:-6px;">
+                        <span>Init MC: $${item.initialMcap > 0 ? Math.floor(item.initialMcap).toLocaleString() : '--'}</span>
+                        <span>Now MC: $${currentMcap > 0 ? Math.floor(currentMcap).toLocaleString() : '--'} (<b class="${dClass}">${mcapDiff > 0 ? '+' : ''}$${Math.floor(mcapDiff).toLocaleString()}</b>)</span>
+                    </div>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        setInterval(async () => {
+            if (!botActive && document.getElementById('manualTarget').value.length < 30) return;
+
+            let feedMints = dbFeed.map(f => f.mint);
+            const activeMints = new Set([...Object.keys(dbPositions), ...dbWatchlist, ...feedMints]);
+            
+            const currentRadar = document.getElementById('manualTarget').value.trim();
+            if (currentRadar.length > 30 && document.getElementById('view-radar').classList.contains('active')) activeMints.add(currentRadar);
+            
+            for (const mint of activeMints) { await fetchTokenMetadata(mint); } 
+            
+            if (document.getElementById('view-radar').classList.contains('active')) { renderPositions(); if(currentRadar.length > 30) scanTarget(); }
+            if (document.getElementById('view-watchlist').classList.contains('active')) { renderWatchlist(); }
+            if (document.getElementById('view-feed').classList.contains('active')) { renderFeed(); }
+        }, 3000);
+
+        function toggleModal(id) { const m = document.getElementById(id); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
+        function getFormData() { let data = {}; configFields.forEach(id => { if(document.getElementById(id)) data[id] = document.getElementById(id).value; }); return data; }
+        function saveSettings() { socket.emit('save_settings', getFormData()); document.getElementById('modal-core').style.display = 'none'; document.getElementById('modal-adv').style.display = 'none'; }
+        
+        function toggleBot() { 
+            botActive = !botActive; 
+            const btn = document.getElementById('botBtn'); 
+            if (botActive) { 
+                btn.innerHTML = "<i class='fa-solid fa-stop'></i> Stop Scanner"; 
+                btn.className = "btn btn-red";
+                socket.emit('start_bot'); 
+            } else { 
+                btn.innerHTML = "<i class='fa-solid fa-play'></i> Start Scanner"; 
+                btn.className = "btn btn-green";
+                socket.emit('stop_bot'); 
+            } 
+        }
+        
+        function executeManual() { const target = document.getElementById('manualTarget').value.trim(); if (target.length > 30) socket.emit('execute_manual', target); }
+        function executeManualSell(mint, percentage) { event.stopPropagation(); if (confirm(`Execute market dump for ${percentage}% of this asset?`)) { socket.emit('execute_sell', { targetMint: mint, percentage: percentage }); } }
+    </script>
+</body>
+</html>
