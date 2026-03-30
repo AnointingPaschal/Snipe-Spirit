@@ -604,4 +604,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(5000, () => console.log(`🌐 TERMINAL ONLINE: 5000`));
+server.listen(5000, () => console.log(`🌐 TERMINAL ONLINE: 5000, Open http://localhost:5000 in your browser.`));
